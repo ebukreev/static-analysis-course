@@ -113,6 +113,7 @@ object Tip extends App {
         | -livevars          enable live variables analysis
         | -available         enable available expressions analysis
         | -vbusy             enable very busy expressions analysis
+        | -varsize           enable variables size analysis
         | -reaching          enable reaching definitions analysis
         | -constprop         enable constant propagation analysis
         | -interval          enable interval analysis
@@ -213,7 +214,8 @@ object Tip extends App {
                 if (!dfo.interprocedural(v)) {
                   FlowSensitiveAnalysis.select(s, v, wcfg).foreach { an =>
                     // run the analysis
-                    log.verb(s"Performing ${an.getClass.getSimpleName}")
+                    // Some local scala runtime problems
+                    // log.verb(s"Performing ${an.getClass.getSimpleName}")
                     val res = an.analyze().asInstanceOf[Map[CfgNode, _]]
                     Output.output(file, DataFlowOutput(s), wcfg.toDot(Output.labeler(res, an.stateAfterNode), Output.dotIder), options.out)
                   }
@@ -336,7 +338,7 @@ object Tip extends App {
           options.andersen = true
         case "-steensgaard" =>
           options.steensgaard = true
-        case "-sign" | "-livevars" | "-available" | "-vbusy" | "-reaching" | "-constprop" | "-interval" | "-copyconstprop" | "-uninitvars" | "-taint" =>
+        case "-sign" | "-livevars" | "-varsize" | "-available" | "-vbusy" | "-reaching" | "-constprop" | "-interval" | "-copyconstprop" | "-uninitvars" | "-taint" =>
           options.dfAnalysis += dfa.withName(args(i).drop(1)) -> {
             if (i + 1 < args.length && dfo.values.map(_.toString()).contains(args(i + 1))) {
               i = i + 1
