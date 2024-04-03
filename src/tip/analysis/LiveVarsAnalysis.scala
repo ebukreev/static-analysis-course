@@ -3,6 +3,7 @@ package tip.analysis
 import tip.ast._
 import tip.lattices._
 import tip.ast.AstNodeData.DeclarationData
+import tip.ast.AstOps.AstOp
 import tip.solvers._
 import tip.cfg._
 
@@ -20,24 +21,28 @@ abstract class LiveVarsAnalysis(cfg: IntraproceduralProgramCfg)(implicit declDat
   NoPointers.assertContainsProgram(cfg.prog)
   NoRecords.assertContainsProgram(cfg.prog)
 
-  def transfer(n: CfgNode, s: lattice.sublattice.Element): lattice.sublattice.Element =
+  def transfer(n: CfgNode, s: lattice.sublattice.Element): lattice.sublattice.Element = {
+    def lubWithAppearingIds(s: lattice.sublattice.Element, appearingIds: Set[ADeclaration])
+      = lattice.sublattice.lub(s, appearingIds)
+
     n match {
       case _: CfgFunExitNode => lattice.sublattice.bottom
       case r: CfgStmtNode =>
         r.data match {
-          case cond: AExpr => ??? //<--- Complete here
+          case cond: AExpr => lubWithAppearingIds(s, cond.appearingIds)
           case as: AAssignStmt =>
             as.left match {
-              case id: AIdentifier => ??? //<--- Complete here
+              case id: AIdentifier => lubWithAppearingIds(s - id, as.right.appearingIds)
               case _ => ???
             }
-          case varr: AVarStmt => ??? //<--- Complete here
-          case ret: AReturnStmt => ??? //<--- Complete here
-          case out: AOutputStmt => ??? //<--- Complete here
+          case varr: AVarStmt => s -- varr.declIds
+          case ret: AReturnStmt => lubWithAppearingIds(s, ret.exp.appearingIds)
+          case out: AOutputStmt => lubWithAppearingIds(s, out.exp.appearingIds)
           case _ => s
         }
       case _ => s
     }
+  }
 }
 
 /**
